@@ -33,6 +33,31 @@ import network.Server;
 public class Game extends Application {
 	
 	public static void main(String[] args) {
+		if(args.length == 1) {
+			if(!args[0].contains(":")) {
+				System.err.println("Usage: java -jar client.jar <IP:PORT> or <IP> <PORT>");
+				System.exit(1);
+			} else {
+				IP = args[0].split(":")[0];
+				try {
+					PORT = Integer.valueOf(args[0].split(":")[1]);
+				} catch (NumberFormatException e) {
+					System.err.println("Usage: java -jar client.jar <IP:PORT> or <IP> <PORT>");
+					System.exit(1);
+				}
+			}
+		} else if(args.length == 2) {
+			IP = args[0];
+			try {
+				PORT = Integer.valueOf(args[1]);
+			} catch (NumberFormatException e) {
+				System.err.println("Usage: java -jar client.jar <IP:PORT> or <IP> <PORT>");
+				System.exit(1);
+			}
+		} else {
+			System.err.println("Usage: java -jar client.jar <IP:PORT> or <IP> <PORT>");
+			System.exit(1);
+		}
 		launch();
 	}
 	
@@ -66,6 +91,8 @@ public class Game extends Application {
 	private Timer t1;
 	private boolean keyPressed = false;
 	private int id;
+	private static String IP;
+	private static int PORT;
 	
 	ObjectOutputStream out;
 	ObjectInputStream in;
@@ -75,8 +102,13 @@ public class Game extends Application {
 	static Timer timer;
 	
 	@SuppressWarnings("unchecked")
-	public void createClient() throws UnknownHostException, IOException {
-		socket = new Socket(Server.IP, Server.PORT);
+	public void createClient() throws IOException {
+		try {
+			socket = new Socket(IP, PORT);
+		} catch (IOException e1) {
+			System.err.println("Cannot connect to the server. IP address or Port number may be invalid.");
+			System.exit(1);
+		}
 		out = new ObjectOutputStream(socket.getOutputStream());
 		in = new ObjectInputStream(socket.getInputStream());
 		connected = true;

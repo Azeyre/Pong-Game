@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,13 +26,38 @@ public class Server implements Runnable {
 	private Socket socket;
 
 	private static Timer timer;
-	public static final int PORT = 4444;
+	public static int PORT;
 	public static final String IP = getIp();
 	private boolean isRunning = false;
 	
 	private Ball ball;
 	
 	public static int getId() {return totalPlayers;}
+	
+	@SuppressWarnings("deprecation")
+	public static void main(String[] args) {
+		if(args.length != 1) {
+			System.err.println("Usage: java -jar server.jar <PORT>");
+			System.exit(1);
+		} else {
+			try {
+				PORT = Integer.valueOf(args[0]);
+			} catch(NumberFormatException e) {
+				System.err.println("Usage: java -jar server.jar <PORT>");
+				System.exit(1);
+			}
+			if (IP != null) {
+				System.out.println("Starting server on: " + IP + ":" + PORT);
+				Server multi = new Server();
+				new Thread(multi).start();
+				Thread.currentThread().stop();
+				System.exit(0);
+			} else {
+				System.err.println("Cannot start the server...");
+				System.exit(1);
+			}
+		}
+	}
 
 	@Override
 	public void run() {
@@ -65,20 +91,6 @@ public class Server implements Runnable {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			System.exit(1);
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	public static void main(String[] args) {
-		if (IP != null) {
-			System.out.println("Starting server on: " + IP + ":" + PORT);
-			Server multi = new Server();
-			new Thread(multi).start();
-			Thread.currentThread().stop();
-			System.exit(1);
-		} else {
-			System.err.println("Cannot start the server...");
 			System.exit(1);
 		}
 	}

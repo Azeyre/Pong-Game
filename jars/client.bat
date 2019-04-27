@@ -1,0 +1,1 @@
+java -jar client.jar IP:PORT or IP PORT
