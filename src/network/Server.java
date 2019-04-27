@@ -29,7 +29,9 @@ public class Server implements Runnable {
 	public static int PORT;
 	public static final String IP = getIp();
 	private boolean isRunning = false;
-	
+	public static int[] score = {0,0};
+	private Object[] object = {players,score};
+	private int res = 0;
 	private Ball ball;
 	
 	public static int getId() {return totalPlayers;}
@@ -77,6 +79,17 @@ public class Server implements Runnable {
 			} catch (IOException e) {
 				System.err.println("Problem with the client...");
 				System.exit(1);
+			}
+			if(totalPlayers >= 1) {
+				System.out.println("Lance la balle");
+				new Timer().schedule(new TimerTask() {
+
+					@Override
+					public void run() {
+						ball.move();
+					}
+					
+				}, 0, 8);
 			}
 			new Thread(new WorkerRunnable(socket)).start();
 			if (totalPlayers == 0) {
@@ -141,14 +154,14 @@ public class Server implements Runnable {
 					}
 				}
 			}
-			System.out.println("Server / Client connection, set up complete");
+			//System.out.println("Server / Client connection, set up complete");
 			id = totalPlayers++;
 			if(id == 0) {
 				j = new PlayerBox(20,10,20,100);
 			} else j = new PlayerBox(Game.WIDTH - 40,10,20,100);
 			players.add(j);
 			try {
-				out.writeObject(players);
+				out.writeObject(object);
 				out.reset();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -162,7 +175,7 @@ public class Server implements Runnable {
 		 * run() done everytime client is sending information
 		 */
 		public void run() {
-			System.out.println("Enter run(), setting up player information");
+			//System.out.println("Enter run(), setting up player information");
 			Timer t1 = new Timer();
 			Timer t2 = new Timer();
 			
@@ -173,7 +186,7 @@ public class Server implements Runnable {
 						j = (PlayerBox) in.readObject();
 						players.get((id+1)).setY(j.getY());
 					} catch (ClassNotFoundException | IOException e) {
-						System.err.println("Error during receiving packets");
+						//System.err.println("Error during receiving packets");
 						running = false;
 						t1.cancel();
 						t2.cancel();
@@ -187,8 +200,8 @@ public class Server implements Runnable {
 					}
 
 				}
-			}, 0, 16);
-			System.out.println("Sending packets");
+			}, 0, 8);
+			//System.out.println("Sending packets");
 			t2.schedule(new TimerTask() {
 				@Override
 				public void run() {
@@ -197,13 +210,11 @@ public class Server implements Runnable {
 							if(players.size() == 3) {
 								if(id == 0) ball.collisionLeft(j);
 								else ball.collisionRight(j);
-								
-								ball.move(j);
 							}
-							out.writeObject(players);
+							out.writeObject(object);
 							out.reset();
 						} catch (IOException e) {
-							System.err.println("Error during sending packets");
+							//System.err.println("Error during sending packets");
 							t1.cancel();
 							t2.cancel();
 							try {
@@ -217,7 +228,7 @@ public class Server implements Runnable {
 					} else
 						t2.cancel();
 				}
-			}, 0, 16);
+			}, 0, 8);
 		}
 	}
 }

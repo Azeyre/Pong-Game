@@ -13,6 +13,7 @@ import graphics.Ball;
 import graphics.PlayerBox;
 import graphics.Position;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
@@ -32,7 +33,32 @@ import network.Server;
 
 public class Game extends Application {
 	
+	private Button start, exit;
+	private Label pong;
+	public static final int WIDTH = 800, HEIGHT = 480;
+	private Canvas cv;
+	private GraphicsContext gc;
+	private ArrayList<Position> pos;
+	private Ball ball;
+	private PlayerBox j1, j2;
+	private boolean gameRunning = false;
+	private Timer t1;
+	private boolean keyPressed = false;
+	private int id;
+	private static String IP;
+	private static int PORT;
+	private Object[] object = new Object[2];
+	private int[] score = new int[2];
+	
+	ObjectOutputStream out;
+	ObjectInputStream in;
+	Socket socket;
+	boolean connected = false;
+
+	static Timer timer;
+	
 	public static void main(String[] args) {
+		System.out.println(args[0]);
 		if(args.length == 1) {
 			if(!args[0].contains(":")) {
 				System.err.println("Usage: java -jar client.jar <IP:PORT> or <IP> <PORT>");
@@ -73,33 +99,12 @@ public class Game extends Application {
 		scene.setOnKeyPressed(new KeyboardEvent());
 		scene.setOnKeyReleased(new KeyboardEvent());
 		stage.setScene(scene);
+		stage.setResizable(false);
 		stage.setTitle("Pong Game");
 		stage.show();
 		
 		loop();
 	}
-	
-	private Button start, exit;
-	private Label pong;
-	public static final int WIDTH = 640, HEIGHT = 480;
-	private Canvas cv;
-	private GraphicsContext gc;
-	private ArrayList<Position> pos;
-	private Ball ball;
-	private PlayerBox j1, j2;
-	private boolean gameRunning = false;
-	private Timer t1;
-	private boolean keyPressed = false;
-	private int id;
-	private static String IP;
-	private static int PORT;
-	
-	ObjectOutputStream out;
-	ObjectInputStream in;
-	Socket socket;
-	boolean connected = false;
-
-	static Timer timer;
 	
 	@SuppressWarnings("unchecked")
 	public void createClient() throws IOException {
@@ -113,7 +118,9 @@ public class Game extends Application {
 		in = new ObjectInputStream(socket.getInputStream());
 		connected = true;
 		try {
-			pos = (ArrayList<Position>) in.readObject();
+			object = (Object[]) in.readObject();
+			score = (int[]) object[1];
+			pos = (ArrayList<Position>) object[0];
 			ball = (Ball) pos.get(0);
 			if(pos.size() == 2) {
 				j1 = (PlayerBox) pos.get(1);
@@ -147,6 +154,10 @@ public class Game extends Application {
 			gc.setFill(Color.WHITE);
 			gc.fillRect(j2.getX(), j2.getY(), j2.getWidth(), j2.getHeight());
 		}
+		gc.setFont(new Font("Arial bold", 60));
+		gc.fillText(String.valueOf(score[0]), (cv.getWidth() / 2) - 100, 100);
+		gc.fillText(":", (cv.getWidth() / 2) , 100);
+		gc.fillText(String.valueOf(score[1]), (cv.getWidth() / 2) + 100, 100);
 	}
 	
 	private void loop() {
@@ -156,7 +167,9 @@ public class Game extends Application {
 			@Override
 			public void run() {
 				try {
-					pos = (ArrayList<Position>) in.readObject();
+					object = (Object[]) in.readObject();
+					score = (int[]) object[1];
+					pos = (ArrayList<Position>) object[0];
 					ball = (Ball) pos.get(0);
 					if(pos.size() == 2) {
 						j1 = (PlayerBox) pos.get(1);
@@ -167,14 +180,15 @@ public class Game extends Application {
 							j2 = (PlayerBox) pos.get(1);
 						}
 					}
-					paint();
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
+				Platform.runLater(new Runnable() {
+					public void run() {paint();}
+				});
 			}
-			
-		}, 0, 16);
+		}, 0, 8);
 		new Timer().schedule(new TimerTask() {
 
 			@Override
@@ -188,7 +202,7 @@ public class Game extends Application {
 				}
 			}
 			
-		}, 0, 16);
+		}, 0, 8);
 	}
 	
 	private class Menu {
